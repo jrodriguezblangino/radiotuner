@@ -327,7 +327,8 @@ export default function Home() {
   // Calcular volúmenes basados en la distancia al centro
   const distanceFromCenter = Math.abs(tuningValue - 0.5);
   const musicVolume = isTuned ? 1 : Math.max(0, 1 - (distanceFromCenter / 0.15));
-  const noiseVolume = Math.min(1, distanceFromCenter * 4);
+  // Asegurar que el ruido sea exactamente 0 cuando esté sintonizado
+  const noiseVolume = isTuned ? 0 : Math.min(1, distanceFromCenter * 4);
 
   // Conectar el elemento de audio al contexto cuando esté disponible
   const connectAudioSource = useCallback(() => {
@@ -348,6 +349,17 @@ export default function Home() {
     if (audioContext) return;
 
     const ctx = new (window.AudioContext || window.webkitAudioContext!)();
+
+    // En iOS/Safari, el contexto de audio puede estar suspendido inicialmente
+    if (ctx.state === 'suspended') {
+      try {
+        await ctx.resume();
+        console.log('Audio context resumed for iOS/Safari');
+      } catch (error) {
+        console.warn('Failed to resume audio context:', error);
+      }
+    }
+
     setAudioContext(ctx);
 
     // Crear ruido blanco
@@ -412,13 +424,36 @@ export default function Home() {
     }
   }, [isPoweredOn, isTuned, audioContext]);
 
+  // Event listener para activar audio en iOS/Safari
+  useEffect(() => {
+    const handleUserInteraction = () => {
+      ensureAudioContextActive();
+    };
+
+    // Agregar listeners para interacciones comunes del usuario
+    document.addEventListener('touchstart', handleUserInteraction, { once: true });
+    document.addEventListener('click', handleUserInteraction, { once: true });
+    document.addEventListener('keydown', handleUserInteraction, { once: true });
+
+    return () => {
+      document.removeEventListener('touchstart', handleUserInteraction);
+      document.removeEventListener('click', handleUserInteraction);
+      document.removeEventListener('keydown', handleUserInteraction);
+    };
+  }, [ensureAudioContextActive]);
+
   // Actualizar volúmenes
   useEffect(() => {
     if (!isPoweredOn) return;
 
+    const noiseGainValue = noiseVolume * masterVolume * 0.3;
+    const musicGainValue = musicVolume * masterVolume;
+
+    console.log(`Audio volumes - Noise: ${noiseGainValue.toFixed(3)}, Music: ${musicGainValue.toFixed(3)}, IsTuned: ${isTuned}, Distance: ${Math.abs(tuningValue - 0.5).toFixed(3)}`);
+
     if (noiseGainRef.current) {
       noiseGainRef.current.gain.setTargetAtTime(
-        noiseVolume * masterVolume * 0.3,
+        noiseGainValue,
         audioContext?.currentTime || 0,
         0.1
       );
@@ -426,15 +461,30 @@ export default function Home() {
 
     if (musicGainRef.current) {
       musicGainRef.current.gain.setTargetAtTime(
-        musicVolume * masterVolume,
+        musicGainValue,
         audioContext?.currentTime || 0,
         0.1
       );
     }
-  }, [isPoweredOn, noiseVolume, musicVolume, masterVolume, audioContext]);
+  }, [isPoweredOn, noiseVolume, musicVolume, masterVolume, audioContext, isTuned, tuningValue]);
+
+  // Función para asegurar que el contexto de audio esté activo (especialmente para iOS)
+  const ensureAudioContextActive = useCallback(async () => {
+    if (audioContext && audioContext.state === 'suspended') {
+      try {
+        await audioContext.resume();
+        console.log('Audio context resumed on user interaction');
+      } catch (error) {
+        console.warn('Failed to resume audio context on interaction:', error);
+      }
+    }
+  }, [audioContext]);
 
   // Control de encendido/apagado
   const togglePower = async () => {
+    // Asegurar que el contexto de audio esté activo antes de cualquier operación
+    await ensureAudioContextActive();
+
     if (!isPoweredOn) {
       await initAudio();
       setIsPoweredOn(true);
