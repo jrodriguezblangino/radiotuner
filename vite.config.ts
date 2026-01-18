@@ -13,4 +13,19 @@ export default defineConfig({
       '@': path.resolve(__dirname, './'),
     },
   },
+  build: {
+    outDir: 'dist',
+    sourcemap: false,
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          vendor: ['react', 'react-dom'],
+          ui: ['framer-motion', 'lucide-react'],
+        },
+      },
+    },
+  },
+  server: {
+    host: true,
+  },
 })
