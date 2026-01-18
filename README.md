@@ -89,6 +89,7 @@ Radio Lele/
 
 - Asegúrate de tener un archivo `musica.mp3` en la carpeta `public` para que la radio funcione correctamente.
 - El proyecto está configurado para usar path aliases (`@/`) para importaciones más limpias.
+- Desplegado en Vercel con configuración optimizada para aplicaciones SPA.
 
 ## 📄 Licencia
 
