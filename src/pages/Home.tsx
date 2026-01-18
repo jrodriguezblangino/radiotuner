@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { motion } from 'framer-motion';
-import RadioDial from '../../components/radio/RadioDial';
-import TuningKnob from '../../components/radio/TuningKnob';
-import VolumeKnob from '../../components/radio/VolumeKnob';
-import Speaker from '../../components/radio/Speaker';
-import KaraokeDisplay from '../../components/radio/KaraokeDisplay';
-import PowerButton from '../../components/radio/PowerButton';
+import RadioDial from '../components/radio/RadioDial';
+import TuningKnob from '../components/radio/TuningKnob';
+import VolumeKnob from '../components/radio/VolumeKnob';
+import Speaker from '../components/radio/Speaker';
+import KaraokeDisplay from '../components/radio/KaraokeDisplay';
+import PowerButton from '../components/radio/PowerButton';
 
 // Letras sincronizadas con timestamps (en segundos)
 // Canción: Perdón Leana - David Bisbal (4:40 total = 280 segundos)
