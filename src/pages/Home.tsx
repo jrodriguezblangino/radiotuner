@@ -426,8 +426,15 @@ export default function Home() {
 
   // Event listener para activar audio en iOS/Safari
   useEffect(() => {
-    const handleUserInteraction = () => {
-      ensureAudioContextActive();
+    const handleUserInteraction = async () => {
+      if (audioContext && audioContext.state === 'suspended') {
+        try {
+          await audioContext.resume();
+          console.log('Audio context resumed on user interaction');
+        } catch (error) {
+          console.warn('Failed to resume audio context on interaction:', error);
+        }
+      }
     };
 
     // Agregar listeners para interacciones comunes del usuario
@@ -440,7 +447,7 @@ export default function Home() {
       document.removeEventListener('click', handleUserInteraction);
       document.removeEventListener('keydown', handleUserInteraction);
     };
-  }, [ensureAudioContextActive]);
+  }, [audioContext]);
 
   // Actualizar volúmenes
   useEffect(() => {
@@ -468,23 +475,9 @@ export default function Home() {
     }
   }, [isPoweredOn, noiseVolume, musicVolume, masterVolume, audioContext, isTuned, tuningValue]);
 
-  // Función para asegurar que el contexto de audio esté activo (especialmente para iOS)
-  const ensureAudioContextActive = useCallback(async () => {
-    if (audioContext && audioContext.state === 'suspended') {
-      try {
-        await audioContext.resume();
-        console.log('Audio context resumed on user interaction');
-      } catch (error) {
-        console.warn('Failed to resume audio context on interaction:', error);
-      }
-    }
-  }, [audioContext]);
 
   // Control de encendido/apagado
   const togglePower = async () => {
-    // Asegurar que el contexto de audio esté activo antes de cualquier operación
-    await ensureAudioContextActive();
-
     if (!isPoweredOn) {
       await initAudio();
       setIsPoweredOn(true);
